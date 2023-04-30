@@ -55,13 +55,14 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/"
-        }
+            "AppBundle\\": "src/AppBundle"
+        },
+       "classmap": [ "app/AppKernel.php", "app/AppCache.php" ]
     },
     "autoload-dev": {
         "psr-4": {
             "App\\Tests\\": "tests/"
-        }
+        },
     },
     "replace": {
         "symfony/polyfill-ctype": "*",
