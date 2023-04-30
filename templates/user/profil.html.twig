@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Compléter votre profil
+{% endblock %}
+
+{% block body %}
+
+	{% if 'ROLE_CANDIDAT' in user.roles %}
+		<h1>Compléter votre profil</h1>
+		{{ form(userProfil_form) }}
+			{% elseif 'ROLE_RECRUTEUR' in user.roles %}
+				<h1>Compléter votre profil</h1>
+				{{ form(userRecruteur_form) }}
+					{% else %}
+						<a href="/user" class="btn btn-warning">Vous n'êtes pas candidat ni recruteur.</a>
+				{% endif %}
+			{% endblock %}
+

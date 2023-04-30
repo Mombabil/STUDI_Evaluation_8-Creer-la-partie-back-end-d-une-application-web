@@ -1,0 +1,21 @@
+{% extends "base.html.twig" %}
+
+{% block body %}
+{# si on est recruteur ou si on est l'admin, on affiche le formulaire #}
+{% if 'ROLE_RECRUTEUR' in app.user.roles or 'ROLE_ADMIN' in app.user.roles %}
+
+
+	{{ form_start(offer_form, {'attr': {'novalidate': 'novalidate'}}) }}
+	{{ form_row(offer_form.title) }}
+	{{ form_row(offer_form.workplace) }}
+	{{ form_row(offer_form.description) }}
+	{{ form_row(offer_form.schedule) }}
+	{{ form_row(offer_form.salary) }}
+	<input type="submit" class="btn btn-primary" value="Publier"/>
+	{{ form_end(offer_form) }}
+{% else %}
+<p>Seul les recruteurs et l'administrateur peuvent publier une annonce.</p>{% endif %}
+
+
+{% endblock %}
+

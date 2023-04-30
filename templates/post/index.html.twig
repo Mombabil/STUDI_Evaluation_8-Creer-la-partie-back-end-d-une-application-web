@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nos offres TRT-Conseil
+{% endblock %}
+
+{% block body %}
+	{# on affiche les message flash d'erreur #}
+	{% for message in app.flashes('success') %}
+		<div class="alert alert-success mt-3">
+			{{ message }}
+		</div>
+	{% endfor %}
+
+	<div class="container-fluid mt-2">
+		{% for offer in offers %}
+			{# les offres n'apparaissent sur la page d'accueil que si elles ont été validé par un consultant #}
+			{% if offer.isValidated %}
+				<div class="card mt-1">
+					<h5 class="card-header">{{ offer.title }}
+						{# si le recruteur a compléter son profil, on affiche le nom de son entreprise #}
+						{% if offer.user.enterprise %}
+							<span style="float:right">By - {{offer.user.enterprise}}</span>
+						{% endif %}
+					 </h5>
+					<div class="card-body">
+						<h5 class="card-title">{{ offer.workplace }}</h5>
+						<p class="card-text">{{ offer.description }}</p>
+						<p class="card-text">{{ offer.schedule }}</p>
+						<p class="card-text">{{ offer.salary }}
+							/ heures</p>
+					</div>
+					<div
+						class="card-footer">
+						{# si on est connecté #}
+						{% if app.user %}
+							{# si on est candidat #}
+							{% if 'ROLE_CANDIDAT' in app.user.roles %}
+								{# si le cv est posté #}
+								{% if app.user.cv is not null %}
+									<a
+										href="application/{{offer.id}}" class="btn btn-info">
+										{# on affiche le bouton pour postuler #}
+										Postuler
+									</a>
+								{% else %}
+								{# sinon un bouton redirige vers la page de profil #}
+									<a href="/user/profil/{{app.user.id}}" class="btn btn-warning">Je complète mon profil</a>
+								{% endif %}
+							{% endif %}
+
+						{% endif %}
+
+						<small class="text-muted d-flex justify-content-end">
+							Posté le
+							{{ offer.publishedAt | date('d/m/Y') }}
+							à
+							{{ offer.publishedAt | date('H:i') }}</small>
+					</div>
+				</div>
+			{% endif %}
+		{% endfor %}
+	</div>
+{% endblock %}

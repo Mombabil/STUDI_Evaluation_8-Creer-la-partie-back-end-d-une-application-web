@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+	{# il faut être connecté pour accéder a cette page #}
+	{% if app.user %}
+		{% if app.user.roles|join == 'ROLE_USER' %}
+			<h1>Bienvenue
+				{{ app.user.firstname |capitalize }}</h1>
+
+			<p>Votre compte est en cours de création, veuillez attendre sa validation par l'un de nos consultants.</p>
+		{% endif %}
+	{% endif %}
+{% endblock %}
+

@@ -1,0 +1,285 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+{# il faut être connecté pour accéder a cette page #}
+{% if app.user %}
+
+	{# on affiche les message flash d'erreur #}
+	{% for message in app.flashes('error') %}
+		<div class="alert alert-danger mt-3">
+			{{ message }}
+		</div>
+	{% endfor %}
+	<h1>
+		{% if 'ROLE_CONSULTANT' in app.user.roles %}
+			[CONSULTANT]
+		{% elseif 'ROLE_ADMIN' in app.user.roles %}
+			[ADMIN]
+		{% elseif 'ROLE_CANDIDAT' in app.user.roles %}
+			[CANDIDAT]
+		{% elseif 'ROLE_RECRUTEUR' in app.user.roles %}
+			[RECRUTEUR]
+		{% endif %}
+		{{ app.user.firstname |capitalize }}
+		{% if 'ROLE_CANDIDAT' in app.user.roles or 'ROLE_RECRUTEUR' in app.user.roles %}
+			<a href="/user/profil/{{app.user.id}}" style="float:right" class="btn btn-info">Je complète mon profil</a>
+		{% endif %}
+	</h1>
+
+
+	{# si on est admin, on affiche la liste des utilisateurs et leur role #}
+	{% if 'ROLE_ADMIN' in app.user.roles %}
+		<table class="table">
+			<thead>
+				<tr>
+					<th scope="col">#</th>
+					<th scope="col">Nom</th>
+					<th scope="col">Prénom</th>
+					<th scope="col">Email</th>
+					<th scope="col">Role</th>
+					<th scope="col">Modifier</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for user in users %}
+					<form method="post">
+						<tr>
+							<th scope="row">{{ user.id }}</th>
+							<td>{{ user.firstname }}</td>
+							<td>{{ user.name }}</td>
+							<td>{{ user.email }}</td>
+							<td>
+								{% for role in user.roles %}
+									{% if role == "ROLE_USER" %}
+										<span style="color: red">Pas de role</span>
+									{% elseif role == "ROLE_CANDIDAT" %}
+										Candidat
+									{% elseif role == "ROLE_RECRUTEUR" %}
+										Recruteur
+									{% elseif role == "ROLE_CONSULTANT" %}
+										Consultant
+									{% elseif role == "ROLE_ADMIN" %}
+										Administrateur
+									{% endif %}
+								{% endfor %}
+							</td>
+							<td>
+								<a href="/user/edit/{{user.id}}" class="btn btn-info">Modifier</a>
+							</td>
+						</tr>
+					</form>
+				{% endfor %}
+			</tbody>
+		</table>
+	{% endif %}
+
+	{# si on est recruteur, on affiche la liste des offres que l'on a publié, et leur état (validé ou non par le consultant) #}
+	{% if 'ROLE_RECRUTEUR' in app.user.roles %}
+		{% if app.user.validatedAccount %}
+			<div class="container-fluid mt-2">
+				<h2>Mes Offres publiés</h2>
+				<table class="table">
+					<thead>
+						<tr>
+							<th scope="col">#</th>
+							<th scope="col">Titre</th>
+							<th scope="col">Lieu</th>
+							<th scope="col">Horaire</th>
+							<th scope="col">Taux</th>
+							<th scope="col">Etat</th>
+						</tr>
+					</thead>
+					<tbody>
+						<form method="post">
+							{% for post in posts %}
+								{% if post.user.id == app.user.id %}
+									<tr>
+										<th scope="row">{{ post.id }}</th>
+										<td>{{ post.title }}</td>
+										<td>{{ post.workplace }}</td>
+										<td>{{ post.schedule }}</td>
+										<td>{{ post.salary }}</td>
+										<td>
+											{% if post.isValidated %}
+												<span class="btn btn-success">Publié</span>
+											{% else %}
+												<span class="btn btn-warning">En attente</span>
+											{% endif %}
+										</td>
+									</tr>
+								{% endif %}
+							{% endfor %}
+						</form>
+					</tbody>
+				</table>
+			</div>
+			<div class="container-fluid mt-2">
+				<h2>Candidatures reçues</h2>
+				{% for post in posts %}
+					<h6>{{ post.title }} - {{ post.workplace }}</h6>
+					<ul>
+						{% for candidature in candidatures %}
+							{% if post.id == candidature.offer %}
+								<li>{{candidature.username}} {{candidature.userfirstname}}</li>
+							{% endif %}
+						{% endfor %}
+					</ul>
+				{% endfor %}
+			</div>
+		{% elseif app.user.validatedAccount == false or app.user.validatedAccount == NULL %}
+			<p>Votre compte est en cours de création, veuillez attendre sa validation par l'un de nos consultants</p>
+		{% endif %}
+	{% endif %}
+{% endif %}
+
+{# si on est candidat, on affiche la liste des offres auxquelles on a postulé #}
+{% if 'ROLE_CANDIDAT' in app.user.roles %}
+	{% if app.user.validatedAccount == true %}
+		<h2>Mes candidatures</h2>
+		<table class="table">
+			<thead>
+				<tr>
+					<th scope="col">#</th>
+					<th scope="col">Poste</th>
+					<th scope="col">Ville</th>
+					<th scope="col">Statut</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for candidature in candidatures %}
+							<tr>
+								<td>{{ candidature.id }}</td>
+								<td>{{ candidature.title }}</td>
+								<td>{{ candidature.workplace }}</td>
+								<td>
+									{% if candidature.isValidated %}
+										<span class="btn btn-success">Validé</span>
+									{% else %}
+										<span class="btn btn-warning">En attente</span>
+									{% endif %}
+								</td>
+							</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	{% endif %}
+{% endif %}
+
+{# si on est consultant, on affiche la liste des compte recruteurs et candidats à valider, ainsi que les candidatures à valider egalement #}
+{% if 'ROLE_CONSULTANT' in app.user.roles %}
+
+	{# Interface de gestion des nouveaux utilisateurs #}
+	<h2>Comptes à vérifier</h2>
+	<table class="table">
+		<thead>
+			<tr>
+				<th scope="col">#</th>
+				<th scope="col">Nom</th>
+				<th scope="col">Prénom</th>
+				<th scope="col">Email</th>
+				<th scope="col">Role</th>
+				<th scope="col">Modifier</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for user in users %}
+				{# si il y a un compte en attente de validation, on l'affiche #}
+					<form method="post">
+						<tr>
+							<th scope="row">{{ user.id }}</th>
+							<td>{{ user.firstname }}</td>
+							<td>{{ user.name }}</td>
+							<td>{{ user.email }}</td>
+							<td>
+								{% for role in user.roles %}
+									{% if role == "ROLE_USER" %}
+										<span style="color: red">Pas de role</span>
+									{% elseif role == "ROLE_CANDIDAT" %}
+										Candidat
+									{% elseif role == "ROLE_RECRUTEUR" %}
+										Recruteur
+									{% elseif role == "ROLE_CONSULTANT" %}
+										Consultant
+									{% elseif role == "ROLE_ADMIN" %}
+										Administrateur
+									{% endif %}
+								{% endfor %}
+							</td>
+							<td>
+							{% if 'ROLE_USER' in user.roles %}
+								<a href="/user/validate/{{user.id}}" class="btn btn-warning">Valider</a>
+							{% else %}
+								<span class="btn btn-success">OK</span>
+							{% endif %}
+							</td>
+						</tr>
+					</form>
+			{% endfor %}
+		</tbody>
+	</tbody>
+	</table>
+
+	{# Interface de validations des publications des recruteurs #}
+	<h2>Publications à vérifier</h2>
+	{% for post in posts %}
+			<div class="card mt-1">
+				<h5 class="card-header">{{ post.title }}
+				{% if post.isValidated == false %}
+					<span style="float:right">
+						<a href="offers/validate/{{ post.id }}" class="btn btn-info">Valider le post</a>
+					</span>
+				{% else %}
+					<span style="float:right" class="btn btn-success">
+						OK
+					</span>
+				{% endif %}
+				</h5>
+				<div class="card-body">
+					<h5 class="card-title">{{ post.workplace }}</h5>
+					<p class="card-text">{{ post.description }}</p>
+					<p class="card-text">{{ post.schedule }}</p>
+					<p class="card-text">{{ post.salary }}
+						/ heures</p>
+				</div>
+				<div class="card-footer">
+					<small class="text-muted d-flex justify-content-end">
+						Posté le
+						{{ post.publishedAt | date('d/m/Y') }}
+						à
+						{{ post.publishedAt | date('H:i') }}</small>
+				</div>
+			</div>
+	{% endfor %}
+
+	{# Interface de validations des candidatures #}
+	<h2>Candidatures à valider</h2>
+			<table class="table">
+				<thead>
+					<tr>
+						<th scope="col">#</th>
+						<th scope="col">Candidat</th>
+						<th scope="col">Poste</th>
+						<th scope="col">Statut</th>
+					</tr>
+				</thead>
+				<tbody>
+				{% for candidature in candidatures %}
+						<tr>
+							<td>{{ candidature.id }}</td>
+							<td>
+								{{ candidature.username }} {{ candidature.userfirstname }}
+							</td>
+							<td>{{ candidature.title }}</td>
+							<td>
+								{% if candidature.isValidated %}
+									<span class="btn btn-success">OK</span>
+								{% else %}
+									<a href="application/validate/{{ candidature.id }}"  class="btn btn-warning">En attente</span>
+								{% endif %}
+							</td>
+						</tr>
+				{% endfor %}
+				</tbody>
+			</table>
+{% endif %}
+{% endblock %}
