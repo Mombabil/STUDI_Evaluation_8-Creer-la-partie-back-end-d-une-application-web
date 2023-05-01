@@ -1,4 +1,4 @@
-when@dev:
+when@prod:
     web_profiler:
         toolbar: false
         intercept_redirects: false
